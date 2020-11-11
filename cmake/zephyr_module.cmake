@@ -25,6 +25,7 @@ if(WEST)
 endif()
 
 if(WEST OR ZEPHYR_MODULES)
+  message("Python path: ${PYTHON_EXECUTABLE}")
   # Zephyr module uses west, so only call it if west is installed or
   # ZEPHYR_MODULES was provided as argument to CMake.
   execute_process(

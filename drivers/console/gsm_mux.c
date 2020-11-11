@@ -469,7 +469,7 @@ static void dlci_run_timer(u32_t current_time)
 	}
 
 	if (new_timer != UINT_MAX) {
-		k_delayed_work_submit(&t1_timer, new_timer);
+		k_delayed_work_submit(&t1_timer, K_MSEC(new_timer));
 	}
 }
 
@@ -620,7 +620,7 @@ static void gsm_mux_t2_timeout(struct k_work *work)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mux->pending_ctrls, entry, next,
 					  node) {
-		if ((s32_t)(entry->req_start + T2_MSEC - current_time) > 0) {
+		if ((s32_t)(entry->req_start + T2 - current_time) > 0) {
 			break;
 		}
 

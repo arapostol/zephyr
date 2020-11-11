@@ -186,6 +186,7 @@ struct zcan_frame {
 	union {
 		u8_t data[8];
 		u32_t data_32[2];
+		u64_t data_64;
 	};
 #if defined(CONFIG_CAN_RX_TIMESTAMP)
 	/** Timer value of the CAN free running timer.
