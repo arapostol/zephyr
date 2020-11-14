@@ -703,21 +703,14 @@ void gsm_ppp_stop(const struct device *device)
 		return;
 	}
 	
-	k_msleep(5000);
-
+	k_msleep(1200);
 	gsm->cmd_handler_data.eol = "";
 	gsm->cmd_handler_data.eol_len = 0;
 	modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
 			     &response_cmds[2], 1, "+++", &gsm->sem_response,
-			     K_SECONDS(3));
-
+			     K_SECONDS(2));
 	gsm->cmd_handler_data.eol = "\r";
 	gsm->cmd_handler_data.eol_len = 1;
-	modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
-			     &response_cmds[0], ARRAY_SIZE(response_cmds), "AT",
-			     &gsm->sem_response, GSM_CMD_AT_TIMEOUT);
-
-	k_msleep(20000);
 }
 
 static int gsm_init(struct device *device)
