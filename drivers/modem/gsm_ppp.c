@@ -196,6 +196,8 @@ static struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("ATH"),
 	/* extender errors in numeric form */
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
+	/* Enable outgoing call answer indication */
+	SETUP_CMD_NOHANDLE("AT+COLP=1"),
 
 #if defined(CONFIG_MODEM_SHELL)
 	/* query modem info */
