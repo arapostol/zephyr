@@ -198,6 +198,12 @@ static struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 	/* Enable outgoing call answer indication */
 	SETUP_CMD_NOHANDLE("AT+COLP=1"),
+	/* Enable incoming call identification */
+	SETUP_CMD_NOHANDLE("AT+CLIP=1"),
+	/* Enable DTMF detection */
+	SETUP_CMD_NOHANDLE("AT+QTONEDET=1"),
+	/* Configure URC Indication Option */
+	SETUP_CMD_NOHANDLE("AT+QURCCFG=\"urcport\",\"uart1\""),
 
 #if defined(CONFIG_MODEM_SHELL)
 	/* query modem info */
