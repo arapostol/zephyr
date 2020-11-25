@@ -189,7 +189,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 }
 #endif /* CONFIG_MODEM_SHELL */
 
-static struct setup_cmd setup_cmds[] = {
+static const struct setup_cmd setup_cmds[] = {
 	/* no echo */
 	SETUP_CMD_NOHANDLE("ATE0"),
 	/* hang up */
@@ -236,10 +236,10 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
 	return 0;
 }
 
-static struct modem_cmd check_attached_cmd =
+static const struct modem_cmd check_attached_cmd =
 	MODEM_CMD("+CGATT:", on_cmd_atcmdinfo_attached, 1U, ",");
 
-static struct setup_cmd connect_cmds[] = {
+static const struct setup_cmd connect_cmds[] = {
 	/* connect to network */
 	SETUP_CMD_NOHANDLE("ATD*99#"),
 };
@@ -677,10 +677,10 @@ void gsm_ppp_start(const struct device *device)
 
 void gsm_ppp_resume(const struct device *device)
 {
+	int r;
 	struct gsm_modem *gsm = device->driver_data;
-	struct net_if *iface = gsm->iface;
 
-	net_if_l2(iface)->enable(iface, true);
+	set_ppp_carrier_on(gsm);
 }
 
 void gsm_ppp_stop(const struct device *device)
@@ -693,15 +693,6 @@ void gsm_ppp_stop(const struct device *device)
 	// k_msleep(2000);
 
 	// set_ppp_carrier_off(gsm);
-
-	if (IS_ENABLED(CONFIG_GSM_MUX)) {
-		/* Lower mux_enabled flag to trigger re-sending AT+CMUX etc */
-		gsm->mux_enabled = false;
-
-		if (gsm->ppp_dev) {
-			//uart_mux_disable(gsm->ppp_dev);
-		}
-	}
 
 	/* Re-init underlying UART comms */
 	int r = modem_iface_uart_init_dev(&gsm->context.iface,
