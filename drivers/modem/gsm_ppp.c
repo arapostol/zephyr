@@ -410,8 +410,6 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	// 	k_thread_abort(&gsm_rx_thread);
 	// }
 
-	LOG_INF("RX ABORTED");
-
 	set_ppp_carrier_on(gsm);
 
 	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
