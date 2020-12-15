@@ -1,0 +1,8 @@
+# KLEEMANN board configuration
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KLEEMANN
+	bool "KLEEMANN V1 Development Board"
+	depends on SOC_STM32F427XX

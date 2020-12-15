@@ -1,0 +1,14 @@
+identifier: kleemann
+name: kleemann v1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 192
+flash: 2048
+supported:
+  - counter
+  - i2c
+  - spi
