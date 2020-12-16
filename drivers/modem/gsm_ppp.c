@@ -198,6 +198,10 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+COLP=1"),
 	/* Enable incoming call identification */
 	SETUP_CMD_NOHANDLE("AT+CLIP=1"),
+	/* Max call audio level */
+	SETUP_CMD_NOHANDLE("AT+CLVL=5"),
+	/* Set PCM driver to TLV320AIC3104 */
+	SETUP_CMD_NOHANDLE("AT+QDAI=5"),
 	/* Enable DTMF detection */
 	SETUP_CMD_NOHANDLE("AT+QTONEDET=1"),
 	/* Configure URC Indication Option */
