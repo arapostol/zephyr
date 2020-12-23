@@ -685,6 +685,35 @@ void gsm_ppp_stop(const struct device *device)
 	gsm->cmd_handler_data.eol_len = 1;
 }
 
+void gsm_ppp_restart(const struct device *device)
+{
+	struct gsm_modem *gsm = device->data;
+	const struct ppp_api *api;
+	const struct device *ppp_dev =
+		device_get_binding(CONFIG_NET_PPP_DRV_NAME);
+	int rc;
+
+	gsm_ppp_stop(device);
+
+	if (!ppp_dev) {
+		LOG_ERR("Cannot find PPP %s!", "device");
+		return;
+	}
+
+	api = (const struct ppp_api *)ppp_dev->api;
+	if (!api) {
+		LOG_ERR("Cannot find ppp_api!");
+		return;
+	}
+
+	rc = api->stop(ppp_dev);
+	if (rc) {
+		LOG_ERR("ppp stop returned %d", rc);
+	}
+
+	gsm_ppp_start(device);
+}
+
 static int gsm_init(const struct device *device)
 {
 	struct gsm_modem *gsm = device->data;
