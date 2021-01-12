@@ -126,6 +126,11 @@ struct modem_info {
 
 static struct modem_info minfo;
 
+const char *gsm_imei()
+{
+	return minfo.mdm_imei;
+}
+
 /*
  * Provide modem info if modem shell is enabled. This can be shown with
  * "modem list" shell command.
@@ -199,9 +204,9 @@ static const struct setup_cmd setup_cmds[] = {
 	/* Enable incoming call identification */
 	SETUP_CMD_NOHANDLE("AT+CLIP=1"),
 	/* Max call audio level */
-	SETUP_CMD_NOHANDLE("AT+CLVL=5"),
+	// SETUP_CMD_NOHANDLE("AT+CLVL=5"),
 	/* Set PCM driver to TLV320AIC3104 */
-	SETUP_CMD_NOHANDLE("AT+QDAI=5"),
+	// SETUP_CMD_NOHANDLE("AT+QDAI=1"),
 	/* Enable DTMF detection */
 	SETUP_CMD_NOHANDLE("AT+QTONEDET=1"),
 	/* Configure URC Indication Option */
@@ -687,7 +692,6 @@ void gsm_ppp_stop(const struct device *device)
 
 void gsm_ppp_restart(const struct device *device)
 {
-	struct gsm_modem *gsm = device->data;
 	const struct ppp_api *api;
 	const struct device *ppp_dev =
 		device_get_binding(CONFIG_NET_PPP_DRV_NAME);
