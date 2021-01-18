@@ -9,6 +9,7 @@ void gsm_ppp_start(const struct device *device);
 void gsm_ppp_resume(const struct device *device);
 void gsm_ppp_restart(const struct device *device);
 void gsm_ppp_stop(const struct device *device);
+int gsm_set_apn(const char *apn);
 const char *gsm_imei();
 /** @endcond */
 

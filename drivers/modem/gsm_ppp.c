@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #include <drivers/uart.h>
 #include <drivers/console/uart_mux.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "modem_context.h"
 #include "modem_iface_uart.h"
@@ -111,20 +112,38 @@ static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("CONNECT", gsm_cmd_ok, 0U, ""),
 };
 
-#if defined(CONFIG_MODEM_SHELL)
 #define MDM_MANUFACTURER_LENGTH  10
 #define MDM_MODEL_LENGTH         16
 #define MDM_REVISION_LENGTH      64
 #define MDM_IMEI_LENGTH          16
+#define MDM_APN_LENGTH			 100
 
 struct modem_info {
 	char mdm_manufacturer[MDM_MANUFACTURER_LENGTH];
 	char mdm_model[MDM_MODEL_LENGTH];
 	char mdm_revision[MDM_REVISION_LENGTH];
 	char mdm_imei[MDM_IMEI_LENGTH];
+	char mdm_apn[MDM_APN_LENGTH];
 };
 
 static struct modem_info minfo;
+
+static char cgdcont_cmd[150];
+
+int gsm_set_apn(const char *apn)
+{
+	int len;
+
+	len = strnlen(apn, MDM_APN_LENGTH);
+	if (len == MDM_APN_LENGTH || len == 0) {
+		LOG_ERR("APN length error");
+		return -EINVAL;
+	}
+
+	strcpy(minfo.mdm_apn, apn);
+	sprintf(cgdcont_cmd, "AT+CGDCONT=1,\"IP\",\"%s\"", apn);
+	return 0;
+}
 
 const char *gsm_imei()
 {
@@ -190,7 +209,6 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 
 	return 0;
 }
-#endif /* CONFIG_MODEM_SHELL */
 
 static const struct setup_cmd setup_cmds[] = {
 	/* no echo */
@@ -212,19 +230,17 @@ static const struct setup_cmd setup_cmds[] = {
 	/* Configure URC Indication Option */
 	SETUP_CMD_NOHANDLE("AT+QURCCFG=\"urcport\",\"uart1\""),
 
-#if defined(CONFIG_MODEM_SHELL)
 	/* query modem info */
 	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
 	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
 	SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
 	SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
-#endif
 
 	/* disable unsolicited network registration codes */
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
 
 	/* create PDP context */
-	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
+	SETUP_CMD_NOHANDLE(cgdcont_cmd),
 };
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
@@ -744,13 +760,11 @@ static int gsm_init(const struct device *device)
 		return r;
 	}
 
-#if defined(CONFIG_MODEM_SHELL)
 	/* modem information storage */
 	gsm->context.data_manufacturer = minfo.mdm_manufacturer;
 	gsm->context.data_model = minfo.mdm_model;
 	gsm->context.data_revision = minfo.mdm_revision;
 	gsm->context.data_imei = minfo.mdm_imei;
-#endif
 
 	gsm->gsm_data.isr_buf = &gsm->gsm_isr_buf[0];
 	gsm->gsm_data.isr_buf_len = sizeof(gsm->gsm_isr_buf);
