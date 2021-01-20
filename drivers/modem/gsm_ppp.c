@@ -129,6 +129,18 @@ struct modem_info {
 static struct modem_info minfo;
 
 static char cgdcont_cmd[150];
+static char clvl_cmd[15];
+
+int gsm_set_volume(uint8_t volume)
+{
+	if (volume > 5) {
+		LOG_ERR("CLVL Volume error");
+		return -EINVAL;
+	}
+
+	sprintf(clvl_cmd, "AT+CLVL=%d", volume);
+	return 0;
+}
 
 int gsm_set_apn(const char *apn)
 {
@@ -222,7 +234,7 @@ static const struct setup_cmd setup_cmds[] = {
 	/* Enable incoming call identification */
 	SETUP_CMD_NOHANDLE("AT+CLIP=1"),
 	/* Max call audio level */
-	// SETUP_CMD_NOHANDLE("AT+CLVL=5"),
+	SETUP_CMD_NOHANDLE(clvl_cmd),
 	/* Set PCM driver to TLV320AIC3104 */
 	// SETUP_CMD_NOHANDLE("AT+QDAI=1"),
 	/* Enable DTMF detection */
