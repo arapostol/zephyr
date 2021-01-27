@@ -682,40 +682,54 @@ void gsm_ppp_start(const struct device *device)
 }
 
 
-void gsm_ppp_resume(const struct device *device)
+int gsm_ppp_resume(const struct device *device)
 {
 	struct gsm_modem *gsm = device->data;
+	int rc;
 
-	modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
+	rc = modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
 		       &response_cmds[2], 1, "ATO", &gsm->sem_response,
 		       K_SECONDS(2));
 
+	if (rc < 0) {
+		rc = modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
+				&response_cmds[2], 1, "ATD*99#", &gsm->sem_response,
+				K_SECONDS(2));
+		if (rc < 0) { 
+			return rc;
+		}
+	}
+
 	set_ppp_carrier_on(gsm);
+	return 0;
 }
 
-void gsm_ppp_stop(const struct device *device)
+int gsm_ppp_stop(const struct device *device)
 {
 	struct gsm_modem *gsm = device->data;
 	struct net_if *iface = gsm->iface;
+	int rc;
 
 	net_if_l2(iface)->enable(iface, false);
 
 	/* Re-init underlying UART comms */
-	int r = modem_iface_uart_init_dev(&gsm->context.iface,
+	rc = modem_iface_uart_init_dev(&gsm->context.iface,
 					  CONFIG_MODEM_GSM_UART_NAME);
-	if (r) {
-		LOG_ERR("modem_iface_uart_init returned %d", r);
-		return;
+	if (rc < 0) {
+		LOG_ERR("modem_iface_uart_init returned %d", rc);
+		return rc;
 	}
 	
 	k_msleep(1200);
 	gsm->cmd_handler_data.eol = "";
 	gsm->cmd_handler_data.eol_len = 0;
-	modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
+	rc = modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
 			     &response_cmds[2], 1, "+++", &gsm->sem_response,
 			     K_SECONDS(2));
 	gsm->cmd_handler_data.eol = "\r";
 	gsm->cmd_handler_data.eol_len = 1;
+
+	return rc;
 }
 
 void gsm_ppp_restart(const struct device *device)
