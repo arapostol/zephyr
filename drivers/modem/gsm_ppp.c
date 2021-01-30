@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_iface_uart.h"
 #include "modem_cmd_handler.h"
 #include "../console/gsm_mux.h"
+#include "gsm_apn.h"
 
 #define GSM_CMD_READ_BUF       128
 #define GSM_CMD_AT_TIMEOUT     K_SECONDS(2)
@@ -117,6 +118,7 @@ static const struct modem_cmd response_cmds[] = {
 #define MDM_REVISION_LENGTH      64
 #define MDM_IMEI_LENGTH          16
 #define MDM_APN_LENGTH			 100
+#define MDM_MCCMNC_LENGTH		 7
 
 struct modem_info {
 	char mdm_manufacturer[MDM_MANUFACTURER_LENGTH];
@@ -124,12 +126,30 @@ struct modem_info {
 	char mdm_revision[MDM_REVISION_LENGTH];
 	char mdm_imei[MDM_IMEI_LENGTH];
 	char mdm_apn[MDM_APN_LENGTH];
+	char mdm_mccmnc[MDM_MCCMNC_LENGTH];
 };
 
 static struct modem_info minfo;
 
 static char cgdcont_cmd[150];
 static char clvl_cmd[15];
+
+int apn_lookup(char **apn, const char *mccmcn)
+{
+	int mcc_mcn;
+
+	mcc_mcn = atoi(mccmcn);
+
+	for (int i = 0; i < ARRAY_SIZE(apn_list); i++) {
+		if (mcc_mcn == apn_list[i].mcc_mcn) {
+			LOG_INF("Found APN: %s", log_strdup(apn_list[i].apn));
+			*apn = apn_list[i].apn;
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
 
 int gsm_set_volume(uint8_t volume)
 {
@@ -144,14 +164,24 @@ int gsm_set_volume(uint8_t volume)
 
 int gsm_set_apn(const char *apn)
 {
+	static bool apn_set = false;
 	int len;
 
 	len = strnlen(apn, MDM_APN_LENGTH);
-	if (len == MDM_APN_LENGTH || len == 0) {
+
+	if (len == MDM_APN_LENGTH) {
 		LOG_ERR("APN length error");
 		return -EINVAL;
+	} else if (len == 0) {
+		LOG_INF("Auto APN selected");
+		return 0;
+	} else if (apn_set) {
+		/* If APN was manual set, don't override */
+		LOG_ERR("APN already set");
+		return -EEXIST;
 	}
-
+	
+	apn_set = true;
 	strcpy(minfo.mdm_apn, apn);
 	sprintf(cgdcont_cmd, "AT+CGDCONT=1,\"IP\",\"%s\"", apn);
 	return 0;
@@ -166,6 +196,33 @@ const char *gsm_imei()
  * Provide modem info if modem shell is enabled. This can be shown with
  * "modem list" shell command.
  */
+
+/* Handler: <manufacturer> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_networkinfo)
+{
+	char *substr;
+	char temp[100];
+	size_t out_len;
+
+	out_len = net_buf_linearize(temp,
+				    sizeof(temp) - 1,
+				    data->rx_buf, 0, len);
+	temp[out_len] = '\0';
+
+	substr = strrchr(temp, ',');	   /* ,"493253" */
+	substr += 2; 					   /* 493253" */
+	substr[strlen(substr) - 1] = '\0'; /* 493253 */
+
+	strncpy(minfo.mdm_mccmnc, substr, MDM_MCCMNC_LENGTH);
+
+	LOG_INF("MCC-MNC: %s", log_strdup(minfo.mdm_mccmnc));
+
+	if (apn_lookup(&substr, minfo.mdm_mccmnc) == 0) {
+		gsm_set_apn(substr);
+	}
+
+	return 0;
+}
 
 /* Handler: <manufacturer> */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
@@ -243,6 +300,7 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+QURCCFG=\"urcport\",\"uart1\""),
 
 	/* query modem info */
+	SETUP_CMD("AT+QSPN", "", on_cmd_atcmdinfo_networkinfo, 0U, ""),
 	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
 	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
 	SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
