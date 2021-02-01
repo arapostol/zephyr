@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #include <drivers/console/uart_mux.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <linker/linker-defs.h>
 
 #include "modem_context.h"
 #include "modem_iface_uart.h"
@@ -44,7 +45,7 @@ enum setup_state {
 	STATE_DONE
 };
 
-static struct gsm_modem {
+struct gsm_modem {
 	struct modem_context context;
 
 	struct modem_cmd_handler_data cmd_handler_data;
@@ -70,7 +71,9 @@ static struct gsm_modem {
 	bool mux_enabled : 1;
 	bool mux_setup_done : 1;
 	bool setup_done : 1;
-} gsm;
+};
+
+static struct gsm_modem __ccm_data_section gsm;
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
 		    0, NULL);
