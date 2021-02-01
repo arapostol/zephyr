@@ -748,13 +748,16 @@ int gsm_ppp_resume(const struct device *device)
 	struct gsm_modem *gsm = device->data;
 	int rc;
 
+	gsm->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
+	gsm->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
+
 	rc = modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
-		       &response_cmds[2], 1, "ATO", &gsm->sem_response,
-		       K_SECONDS(2));
+			    &response_cmds[0], ARRAY_SIZE(response_cmds), "ATO",
+			    &gsm->sem_response, K_SECONDS(2));
 
 	if (rc < 0) {
 		rc = modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
-				&response_cmds[2], 1, "ATD*99#", &gsm->sem_response,
+				&response_cmds[0], ARRAY_SIZE(response_cmds), "ATD*99#", &gsm->sem_response,
 				K_SECONDS(2));
 		if (rc < 0) { 
 			return rc;
@@ -780,13 +783,15 @@ int gsm_ppp_stop(const struct device *device)
 		LOG_ERR("modem_iface_uart_init returned %d", rc);
 		return rc;
 	}
-	
+
+	gsm->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
+	gsm->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
+
 	k_msleep(1200);
 	gsm->cmd_handler_data.eol = "";
 	gsm->cmd_handler_data.eol_len = 0;
 	rc = modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
-			     &response_cmds[2], 1, "+++", &gsm->sem_response,
-			     K_SECONDS(2));
+			     &response_cmds[0], ARRAY_SIZE(response_cmds), "+++", &gsm->sem_response, K_SECONDS(2));
 	gsm->cmd_handler_data.eol = "\r";
 	gsm->cmd_handler_data.eol_len = 1;
 
