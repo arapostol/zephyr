@@ -1,0 +1,12 @@
+# KLEEMANN board configuration
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_KLEEMANN_V2
+
+config BOARD
+	default "kleemann_v2"
+
+
+endif # BOARD_KLEEMANN_V2

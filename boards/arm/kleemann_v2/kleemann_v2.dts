@@ -1,0 +1,56 @@
+/*
+ * KLEEMANN V2 BOARD 
+ * DEVICETREE
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f427vi.dtsi>
+
+/ {
+	model = "STMicroelectronics kleemann v2 board";
+	compatible = "st,stm32f4discovery", "st,stm32f427";
+
+	chosen {
+		zephyr,console = &uart7;
+		zephyr,shell-uart = &uart7;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = < 0x1 >;
+		#size-cells = < 0x1 >;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = < 0x0 0xd000 >;
+			read-only;
+		};
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = < 0x20000 0x60000 >;
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = < 0x80000 0x60000 >;
+		};
+		scratch_partition: partition@E0000 {
+			label = "image-scratch";
+			reg = < 0xE0000 0x20000 >;
+		};
+		fspart: partition@100000 {
+			label = "storage";
+			reg = <0x100000 0x100000>;
+		};
+	};
+};
+
+&uart7 {
+	current-speed = <115200>;
+	status = "okay";
+};
