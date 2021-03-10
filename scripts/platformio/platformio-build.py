@@ -62,6 +62,7 @@ CMAKE_API_REPLY_DIR = os.path.join(CMAKE_API_DIR, "reply")
 
 PLATFORMS_WITH_EXTERNAL_HAL = {
     "atmelsam": ["st", "atmel"],
+    "chipsalliance": ["swervolf"],
     "freescalekinetis": ["st", "nxp"],
     "ststm32": ["st", "stm32"],
     "siliconlabsefm32": ["st", "silabs"],
@@ -209,6 +210,11 @@ def run_cmake():
         "-DPYTHON_PREFER:FILEPATH=%s" % env.subst("$PYTHONEXE"),
         "-DPIO_PACKAGES_DIR:PATH=%s" % env.subst("$PROJECT_PACKAGES_DIR"),
     ]
+
+    menuconfig_file = os.path.join(PROJECT_DIR, "zephyr", "menuconfig.conf")
+    if os.path.isfile(menuconfig_file):
+        print("Adding -DOVERLAY_CONFIG:FILEPATH=%s" % menuconfig_file)
+        cmake_cmd.append("-DOVERLAY_CONFIG:FILEPATH=%s" % menuconfig_file)
 
     if board.get("build.zephyr.cmake_extra_args", ""):
         cmake_cmd.extend(
@@ -998,14 +1004,6 @@ offsets_lib = build_library(env, target_configs["offsets"], PROJECT_SRC_DIR)
 
 preliminary_elf_path = os.path.join("$BUILD_DIR", "firmware-pre.elf")
 
-env.Depends(
-    preliminary_elf_path, os.path.join(BUILD_DIR, "zephyr", "kernel", "libkernel.a")
-)
-env.Depends(
-    preliminary_elf_path,
-    os.path.join(BUILD_DIR, "zephyr", "arch", "common", "libisr_tables.a"),
-)
-
 for dep in (offsets_lib, preliminary_ld_script):
     env.Depends(preliminary_elf_path, dep)
 
@@ -1027,14 +1025,22 @@ for dep in (isr_table_file, final_ld_script):
     env.Depends("$PROG_PATH", dep)
 
 # Note: `app` is replaced by files from the `src` folder
-# `kernel` and `isr_tables` libs should be placed outside `whole-archive` flags
-ignore_libs = ("kernel", "isr_tables", "app")
+# `kernel`, `libopenthread` and `isr_tables` libs should be placed outside the
+# `whole-archive` flags
+ignore_libs = ("kernel", "isr_tables", "app", "openthread")
 
-libs = [
-    framework_modules_map[d["id"]]
-    for d in prebuilt_config.get("dependencies", [])
-    if framework_modules_map.get(d["id"], {}) and not d["id"].startswith(ignore_libs)
-]
+whole_libs = []
+weak_libs = []
+for d in prebuilt_config.get("dependencies", []):
+    dependency_id = d["id"]
+    if not framework_modules_map.get(dependency_id, {}):
+        continue
+
+    fmodule = framework_modules_map[dependency_id]
+    if dependency_id.startswith(ignore_libs):
+        weak_libs.append(fmodule)
+    else:
+        whole_libs.append(fmodule)
 
 env.Replace(ARFLAGS=["qc"])
 env.Prepend(_LIBFLAGS="-Wl,--whole-archive ")
@@ -1059,22 +1065,21 @@ link_args["LINKFLAGS"] = sorted(
     filter_args(link_args["LINKFLAGS"], ["-"], ignore_flags)
 )
 
-# Note: isr_tables, kernel and standard libraries must be placed explicitly after
-# zephyr libraries outside of whole-archive flag
+# Note: isr_tables, kernel, openthread and standard libraries must be placed explicitly
+# after zephyr libraries outside of whole-archive flag and specified as explicit
+# dependencies
+
+env.Depends(
+    preliminary_elf_path, [env.subst(library)[0] for library in weak_libs]
+)
 
 env.Append(
     CPPPATH=app_includes["plain_includes"],
     CCFLAGS=[("-isystem", inc) for inc in app_includes.get("sys_includes", [])],
     CPPDEFINES=project_defines,
-    LIBS=sorted(libs) + [offsets_lib],
+    LIBS=sorted(whole_libs) + [offsets_lib],
     _LIBFLAGS=" -Wl,--no-whole-archive "
-    + " ".join(
-        [
-            os.path.join(BUILD_DIR, "zephyr", "kernel", "libkernel.a"),
-            os.path.join(BUILD_DIR, "zephyr", "arch", "common", "libisr_tables.a"),
-        ]
-        + link_args["LIBS"]
-    ),
+    + " ".join([env.subst(library)[0] for library in weak_libs] + link_args["LIBS"]),
 )
 
 # Standard libraries in LIBS are already added to the LINKCOMMAND in _LIBFLAGS
@@ -1134,3 +1139,14 @@ if get_board_architecture(board) == "arm":
         SIZEPROGREGEXP=r"^(?:text|_TEXT_SECTION_NAME_2|sw_isr_table|devconfig|rodata|\.ARM.exidx)\s+(\d+).*",
         SIZEDATAREGEXP=r"^(?:datas|bss|noinit|initlevel|_k_mutex_area|_k_stack_area)\s+(\d+).*",
     )
+
+#
+# Target: menuconfig
+#
+
+env.AddPlatformTarget(
+    "menuconfig",
+    None,
+    [env.VerboseAction(RunMenuconfig, "Running menuconfig...")],
+    "Run Menuconfig",
+)

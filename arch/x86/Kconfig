@@ -95,6 +95,7 @@ endchoice
 
 config ACPI
 	bool "ACPI (Advanced Configuration and Power Interface) support"
+	select ARCH_MAPS_ALL_RAM
 	help
 	  Allow retrieval of platform configuration at runtime.
 
@@ -105,6 +106,9 @@ config PCIE_MMIO_CFG
 	  Selects the use of the memory-mapped PCI Express Extended
 	  Configuration Space instead of the traditional 0xCF8/0xCFC
 	  IO Port registers.
+
+config KERNEL_VM_SIZE
+	default 0xC0000000 if ACPI
 
 config X86_MEMMAP_ENTRIES
 	int "Number of memory map entries"
@@ -183,21 +187,35 @@ config X86_VERY_EARLY_CONSOLE
 
 config X86_MMU
 	bool "Enable Memory Management Unit"
-	select MEMORY_PROTECTION
 	select MMU
 	help
 	  This options enables the memory management unit present in x86
 	  and creates a set of page tables at boot time that is runtime-
 	  mutable.
 
-config X86_MMU_PAGE_POOL_PAGES
-	int "Number of pages to reserve for building page tables"
-	default 17
-	depends on X86_MMU
+config X86_COMMON_PAGE_TABLE
+	bool "Use a single page table for all threads"
+	default n
+	depends on USERSPACE
+	depends on !SMP
+	depends on !X86_KPTI
 	help
-	  Building page tables at boot requires a pool of free memory pages
-	  to construct it. This can't be derived at build time, tune this
-	  to your SoC's specific memory map.
+	  If this option is enabled, userspace memory domains will not have their
+	  own page tables. Instead, context switching operations will modify
+	  page tables in place. This is much slower, but uses much less RAM
+	  for page tables.
+
+config X86_MAX_ADDITIONAL_MEM_DOMAINS
+	int "Maximum number of memory domains"
+	default 3
+	depends on X86_MMU && USERSPACE && !X86_COMMON_PAGE_TABLE
+	help
+	  The initial page tables at boot are pre-allocated, and used for the
+	  default memory domain. Instantiation of additional memory domains
+	  if common page tables are in use requires a pool of free pinned
+	  memory pages for constructing page tables.
+
+	  Zephyr test cases assume 3 additional domains can be instantiated.
 
 config X86_NO_MELTDOWN
 	bool

@@ -68,7 +68,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 	z_check_stack_sentinel();
 
-	if (is_spinlock) {
+	if (is_spinlock && lock != NULL) {
 		k_spin_release(lock);
 	}
 
@@ -100,19 +100,19 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 #ifdef CONFIG_SMP
 		_current_cpu->swap_ok = 0;
-
 		new_thread->base.cpu = arch_curr_cpu()->id;
 
 		if (!is_spinlock) {
 			z_smp_release_global_lock(new_thread);
 		}
 #endif
-		sys_trace_thread_switched_out();
-		_current_cpu->current = new_thread;
+		z_thread_mark_switched_out();
 		wait_for_switch(new_thread);
+		arch_cohere_stacks(old_thread, NULL, new_thread);
+		_current_cpu->current = new_thread;
+
 		arch_switch(new_thread->switch_handle,
 			     &old_thread->switch_handle);
-
 	}
 
 	if (is_spinlock) {
@@ -136,10 +136,7 @@ static inline int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
 
 static inline void z_swap_unlocked(void)
 {
-	struct k_spinlock lock = {};
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	(void) z_swap(&lock, key);
+	(void) do_swap(arch_irq_lock(), NULL, 1);
 }
 
 #else /* !CONFIG_USE_SWITCH */

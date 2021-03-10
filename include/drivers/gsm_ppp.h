@@ -1,9 +1,15 @@
+/*
+ * Copyright (c) 2020 Endian Technologies AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef GSM_PPP_H_
 #define GSM_PPP_H_
 
-#include <stdint.h>
-
 #define GSM_MODEM_DEVICE_NAME "modem_gsm"
+
+#include <stdint.h>
 
 /** @cond INTERNAL_HIDDEN */
 struct device;

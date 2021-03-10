@@ -5,6 +5,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f427vi.dtsi>
+#include <st/f4/stm32f427v(g-i)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics kleemann v2 board";
@@ -51,6 +52,7 @@
 };
 
 &uart7 {
+	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
 	current-speed = <115200>;
 	status = "okay";
 };

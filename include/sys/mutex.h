@@ -16,6 +16,10 @@
  * FUTEX_LOCK_PI and FUTEX_UNLOCK_PI
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef CONFIG_USERSPACE
 #include <sys/atomic.h>
 #include <zephyr/types.h>
@@ -29,6 +33,23 @@ struct sys_mutex {
 	atomic_t val;
 };
 
+/**
+ * @defgroup user_mutex_apis User mode mutex APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * @brief Statically define and initialize a sys_mutex
+ *
+ * The mutex can be accessed outside the module where it is defined using:
+ *
+ * @code extern struct sys_mutex <name>; @endcode
+ *
+ * Route this to memory domains using K_APP_DMEM().
+ *
+ * @param name Name of the mutex.
+ */
 #define SYS_MUTEX_DEFINE(name) \
 	struct sys_mutex name
 
@@ -148,4 +169,13 @@ static inline int sys_mutex_unlock(struct sys_mutex *mutex)
 }
 
 #endif /* CONFIG_USERSPACE */
+
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* ZEPHYR_INCLUDE_SYS_MUTEX_H_ */

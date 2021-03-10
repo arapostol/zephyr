@@ -8,15 +8,16 @@
 #include <stddef.h>
 
 #include <toolchain.h>
-#include <zephyr/types.h>
+#include <soc.h>
 #include <sys/util.h>
+
+#include "hal/cpu.h"
+#include "hal/ccm.h"
+#include "hal/radio.h"
 
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
-
-#include "hal/ccm.h"
-#include "hal/radio.h"
 
 #include "pdu.h"
 
@@ -29,7 +30,6 @@
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_openisa_lll_conn
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -40,7 +40,6 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 		      struct node_tx **tx_release, uint8_t *is_rx_enqueue);
 static struct pdu_data *empty_tx_enqueue(struct lll_conn *lll);
 
-static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
 static uint8_t crc_expire;
 static uint8_t crc_valid;
 static uint16_t trx_cnt;
@@ -71,21 +70,6 @@ int lll_conn_reset(void)
 	}
 
 	return 0;
-}
-
-uint8_t lll_conn_sca_local_get(void)
-{
-	return 0;
-}
-
-uint32_t lll_conn_ppm_local_get(void)
-{
-	return sca_ppm_lut[0];
-}
-
-uint32_t lll_conn_ppm_get(uint8_t sca)
-{
-	return sca_ppm_lut[sca];
 }
 
 void lll_conn_prepare_reset(void)
@@ -613,11 +597,11 @@ static void isr_done(void *param)
 				addr_us_get(0);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
-			e->slave.start_to_address_actual_us =
+			e->drift.start_to_address_actual_us =
 				radio_tmr_aa_restore() - radio_tmr_ready_get();
-			e->slave.window_widening_event_us =
+			e->drift.window_widening_event_us =
 				lll->slave.window_widening_event_us;
-			e->slave.preamble_to_addr_us = preamble_to_addr_us;
+			e->drift.preamble_to_addr_us = preamble_to_addr_us;
 
 			/* Reset window widening, as anchor point sync-ed */
 			lll->slave.window_widening_event_us = 0;

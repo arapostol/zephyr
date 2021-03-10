@@ -36,6 +36,9 @@ static volatile struct soc_dsp_shim_regs *shim_regs =
 
 static void set_compare(uint64_t time)
 {
+	/* Disarm the comparator to prevent spurious triggers */
+	shim_regs->dspwctcs &= ~DSP_WCT_CS_TA(TIMER);
+
 #if (TIMER == 0)
 	/* Set compare register */
 	shim_regs->dspwct0c = time;
@@ -52,7 +55,22 @@ static void set_compare(uint64_t time)
 
 static uint64_t count(void)
 {
-	return shim_regs->walclk;
+	/* The count register is 64 bits, but we're a 32 bit CPU that
+	 * can only read four bytes at a time, so a bit of care is
+	 * needed to prevent racing against a wraparound of the low
+	 * word.  Wrap the low read between two reads of the high word
+	 * and make sure it didn't change.
+	 */
+	volatile uint32_t *wc = (void *)&shim_regs->walclk;
+	uint32_t hi0, hi1, lo;
+
+	do {
+		hi0 = wc[1];
+		lo = wc[0];
+		hi1 = wc[1];
+	} while (hi0 != hi1);
+
+	return (((uint64_t)hi0) << 32) | lo;
 }
 
 static uint32_t count32(void)
@@ -121,7 +139,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (int32_t)MAX_TICKS), 0);
+	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t curr = count();

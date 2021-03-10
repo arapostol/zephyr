@@ -110,9 +110,15 @@
 	rsr.LCOUNT a0
 	s32i a0, a1, BSA_LCOUNT_OFF
 #endif
+	rsr.exccause a0
+	s32i a0, a1, BSA_EXCCAUSE_OFF
 #if XCHAL_HAVE_S32C1I
 	rsr.SCOMPARE1 a0
 	s32i a0, a1, BSA_SCOMPARE1_OFF
+#endif
+#if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
+	rur.THREADPTR a0
+	s32i a0, a1, BSA_THREADPTR_OFF
 #endif
 .endm
 

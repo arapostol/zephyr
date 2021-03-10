@@ -140,7 +140,7 @@ void entry_arbitrary_reason(void *p1, void *p2, void *p3)
 
 #ifndef CONFIG_ARCH_POSIX
 #ifdef CONFIG_STACK_SENTINEL
-void blow_up_stack(void)
+__no_optimization void blow_up_stack(void)
 {
 	char buf[OVERFLOW_STACKSIZE];
 
@@ -151,7 +151,7 @@ void blow_up_stack(void)
 #else
 /* stack sentinel doesn't catch it in time before it trashes the entire kernel
  */
-int stack_smasher(int val)
+__no_optimization int stack_smasher(int val)
 {
 	return stack_smasher(val * 2) + stack_smasher(val * 3);
 }
@@ -302,6 +302,8 @@ void test_fatal(void)
 	k_thread_abort(&alt_thread);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
+#if defined(CONFIG_ASSERT)
+	/* This test shall be skip while ASSERT is off */
 	TC_PRINT("test alt thread 4: fail assertion\n");
 	k_thread_create(&alt_thread, alt_stack,
 			K_THREAD_STACK_SIZEOF(alt_stack),
@@ -310,6 +312,7 @@ void test_fatal(void)
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+#endif
 
 	TC_PRINT("test alt thread 5: initiate arbitrary SW exception\n");
 	k_thread_create(&alt_thread, alt_stack,
