@@ -964,8 +964,6 @@ static int gsm_init(const struct device *device)
 		return -ENODEV;
 	}
 
-	gsm_ppp_start(device);
-
 	return 0;
 }
 
