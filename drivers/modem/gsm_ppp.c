@@ -337,6 +337,8 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+COLP=1"),
 	/* Enable incoming call identification */
 	SETUP_CMD_NOHANDLE("AT+CLIP=1"),
+	/* Set time to wait for connection completion */
+	SETUP_CMD_NOHANDLE("ATS7=120"),
 	/* Max call audio level */
 	SETUP_CMD_NOHANDLE(clvl_cmd),
 	/* Set PCM driver to TLV320AIC3104 */
