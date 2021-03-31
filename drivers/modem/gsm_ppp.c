@@ -826,6 +826,8 @@ int gsm_ppp_resume(const struct device *device)
 	}
 
 	set_ppp_carrier_on(gsm);
+
+	modem_cmd_handler_tx_unlock(&gsm->context.cmd_handler);
 	return 0;
 }
 
