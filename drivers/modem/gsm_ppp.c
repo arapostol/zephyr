@@ -339,6 +339,8 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+CLIP=1"),
 	/* Set time to wait for connection completion */
 	SETUP_CMD_NOHANDLE("ATS7=120"),
+	/* Audio configuration */
+	SETUP_CMD_NOHANDLE("AT+QDAI=5,1,0,1,0,0"),
 	SETUP_CMD_NOHANDLE("AT+QMIC=55000"),
 	SETUP_CMD_NOHANDLE("AT+QRXGAIN=55000"),
 	/* Max call audio level */
