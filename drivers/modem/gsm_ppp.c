@@ -68,6 +68,7 @@ struct gsm_modem {
 	bool mux_enabled : 1;
 	bool mux_setup_done : 1;
 	bool setup_done : 1;
+	bool setup_ppp : 1;
 };
 
 static struct gsm_modem __ccm_data_section gsm;
@@ -463,6 +464,10 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 {
 	int ret;
 
+	if (gsm->setup_done) {
+		goto skip_setup;
+	}
+
 	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
 		ret = modem_cmd_send_nolock(&gsm->context.iface,
 					    &gsm->context.cmd_handler,
@@ -492,6 +497,13 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 			ret, "retrying...");
 		(void)k_delayed_work_submit(&gsm->gsm_configure_work,
 					    K_SECONDS(1));
+		return;
+	}
+
+	gsm->setup_done = true;
+
+skip_setup:
+	if (!gsm->setup_ppp) {
 		return;
 	}
 
@@ -525,8 +537,6 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 					    K_SECONDS(1));
 		return;
 	}
-
-	gsm->setup_done = true;
 
 	set_ppp_carrier_on(gsm);
 
@@ -743,6 +753,10 @@ static void gsm_configure(struct k_work *work)
 					     gsm_configure_work);
 	int ret = -1;
 
+	if (gsm->setup_done) {
+		goto finalization;
+	}
+	
 	LOG_DBG("Starting modem %p configuration", gsm);
 
 	ret = modem_cmd_send_nolock(&gsm->context.iface,
@@ -789,7 +803,26 @@ static void gsm_configure(struct k_work *work)
 		}
 	}
 
+finalization:
 	gsm_finalize_connection(gsm);
+}
+
+void gsm_setup(const struct device *device)
+{
+	struct gsm_modem *gsm = device->data;
+
+	/* Re-init underlying UART comms */
+	int r = modem_iface_uart_init_dev(&gsm->context.iface,
+					  CONFIG_MODEM_GSM_UART_NAME);
+	if (r) {
+		LOG_ERR("modem_iface_uart_init returned %d", r);
+		return;
+	}
+
+	gsm->setup_ppp = false;
+
+	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
+	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_NO_WAIT);
 }
 
 void gsm_ppp_start(const struct device *device)
@@ -803,6 +836,8 @@ void gsm_ppp_start(const struct device *device)
 		LOG_ERR("modem_iface_uart_init returned %d", r);
 		return;
 	}
+
+	gsm->setup_ppp = true;
 
 	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
 	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_NO_WAIT);
@@ -875,6 +910,8 @@ int gsm_ppp_stop(const struct device *device)
 				      K_SECONDS(10))) {
 		LOG_WRN("Failed locking modem cmds!");
 	}
+
+	gsm->setup_ppp = true;
 
 	return rc;
 }
