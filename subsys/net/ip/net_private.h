@@ -24,15 +24,16 @@
  * NOTE: Update comments here and calculate which struct occupies max size.
  */
 
-#ifdef CONFIG_NET_L2_WIFI_MGMT
+#ifdef CONFIG_NET_DHCPV4
 
-#include <net/wifi_mgmt.h>
-#define NET_EVENT_INFO_MAX_SIZE sizeof(struct wifi_scan_result)
+#define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_if_dhcpv4)
 
 #else
 
-#if defined(CONFIG_NET_DHCPV4)
-#define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_if_dhcpv4)
+#if defined(CONFIG_NET_L2_WIFI_MGMT)
+#include <net/wifi_mgmt.h>
+#define NET_EVENT_INFO_MAX_SIZE sizeof(struct wifi_scan_result)
+
 #else
 #define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_event_ipv6_route)
 #endif
