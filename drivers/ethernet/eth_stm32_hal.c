@@ -492,8 +492,8 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 				if (res < 0) {
 					eth_stats_update_errors_rx(
 							net_pkt_iface(pkt));
-					LOG_ERR("Failed to enqueue frame "
-						"into RX queue: %d", res);
+					// LOG_ERR("Failed to enqueue frame "
+					// 	"into RX queue: %d", res);
 					net_pkt_unref(pkt);
 				}
 			}
