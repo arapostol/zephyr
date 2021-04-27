@@ -564,6 +564,13 @@ struct net_if *net_if_get_default(void)
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
 #endif
 
+	if (iface) {
+		LOG_INF("default iface: %s", iface->if_dev->dev->name);
+	} else {
+		LOG_INF("default iface: %s",
+			_net_if_list_start->if_dev->dev->name);
+	}
+
 	return iface ? iface : _net_if_list_start;
 }
 
@@ -2638,6 +2645,7 @@ struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
 
 		ret = net_if_ipv4_addr_mask_cmp(iface, dst);
 		if (ret) {
+			LOG_INF("selected iface: %s", iface->if_dev->dev->name);
 			return iface;
 		}
 	}
