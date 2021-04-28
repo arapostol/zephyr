@@ -816,6 +816,13 @@ static inline void net_if_router_rm(struct net_if_router *router)
 }
 
 /**
+ * @brief Set the default network interface.
+ *
+ * @return 0 on success.
+ */
+int net_if_set_default(struct net_if *iface);
+
+/**
  * @brief Get the default network interface.
  *
  * @return Default interface or NULL if no interfaces are configured.

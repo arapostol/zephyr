@@ -40,6 +40,8 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 extern struct net_if _net_if_list_start[];
 extern struct net_if _net_if_list_end[];
 
+static struct net_if *def_iface = NULL;
+
 #if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
 static struct k_delayed_work router_timer;
@@ -531,12 +533,27 @@ struct net_if *net_if_lookup_by_dev(const struct device *dev)
 	return NULL;
 }
 
+int net_if_set_default(struct net_if *iface)
+{
+	if (iface == NULL) {
+		return -EINVAL;
+	}
+
+	def_iface = iface;
+	return 0;
+}
+
 struct net_if *net_if_get_default(void)
 {
 	struct net_if *iface = NULL;
 
 	if (_net_if_list_start == _net_if_list_end) {
 		return NULL;
+	}
+
+	if (def_iface) {
+		iface = def_iface;
+		goto skip_defaults;
 	}
 
 #if defined(CONFIG_NET_DEFAULT_IF_ETHERNET)
@@ -564,6 +581,7 @@ struct net_if *net_if_get_default(void)
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
 #endif
 
+skip_defaults:
 	if (iface) {
 		LOG_INF("default iface: %s", iface->if_dev->dev->name);
 	} else {
