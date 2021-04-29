@@ -10,6 +10,7 @@
 #define GSM_MODEM_DEVICE_NAME "modem_gsm"
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /** @cond INTERNAL_HIDDEN */
 struct device;
@@ -19,7 +20,8 @@ void gsm_ppp_restart(const struct device *device);
 int gsm_ppp_stop(const struct device *device);
 
 void gsm_setup(const struct device *device);
-
+bool gsm_is_ready(const struct device *device);
+bool gsm_setup_finished(const struct device *device);
 
 int gsm_set_apn(const char *apn);
 int gsm_set_volume(uint8_t volume);

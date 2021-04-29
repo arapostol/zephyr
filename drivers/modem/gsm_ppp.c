@@ -65,6 +65,7 @@ struct gsm_modem {
 
 	struct net_if *iface;
 
+	bool modem_ready : 1;
 	bool mux_enabled : 1;
 	bool mux_setup_done : 1;
 	bool setup_done : 1;
@@ -92,6 +93,15 @@ static void gsm_rx(struct gsm_modem *gsm)
 	}
 }
 
+MODEM_CMD_DEFINE(gsm_cmd_rdy)
+{
+	modem_cmd_handler_set_error(data, 0);
+	LOG_DBG("rdy");
+	gsm.modem_ready = true;
+	k_sem_give(&gsm.sem_response);
+	return 0;
+}
+
 MODEM_CMD_DEFINE(gsm_cmd_ok)
 {
 	modem_cmd_handler_set_error(data, 0);
@@ -112,8 +122,8 @@ static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("OK", gsm_cmd_ok, 0U, ""),
 	MODEM_CMD("ERROR", gsm_cmd_error, 0U, ""),
 	MODEM_CMD("CONNECT", gsm_cmd_ok, 0U, ""),
+	MODEM_CMD("RDY", gsm_cmd_rdy, 0U, ""),
 };
-
 
 #define MDM_MANUFACTURER_LENGTH  10
 #define MDM_MODEL_LENGTH         16
@@ -157,6 +167,18 @@ int apn_lookup(char **apn, const char *mccmcn)
 	}
 
 	return -ENOENT;
+}
+
+bool gsm_setup_finished(const struct device *device)
+{
+	struct gsm_modem *gsm = device->data;
+	return gsm->setup_done;
+}
+
+bool gsm_is_ready(const struct device *device)
+{
+	struct gsm_modem *gsm = device->data;
+	return gsm->modem_ready;
 }
 
 int gsm_set_volume(uint8_t volume)
@@ -960,6 +982,8 @@ static int gsm_init(const struct device *device)
 	gsm->cmd_handler_data.eol = "\r";
 
 	k_sem_init(&gsm->sem_response, 0, 1);
+
+	gsm->modem_ready = false;
 
 	r = modem_cmd_handler_init(&gsm->context.cmd_handler,
 				   &gsm->cmd_handler_data);
