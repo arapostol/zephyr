@@ -2599,6 +2599,10 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 		return false;
 	}
 
+	if (!net_if_flag_is_set(iface, NET_IF_UP)) {
+		return false;
+	}
+
 	subnet = UNALIGNED_GET(&addr->s_addr) & ipv4->netmask.s_addr;
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
@@ -2658,15 +2662,15 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
 
 struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
 {
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
-		bool ret;
+	// Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	// 	bool ret;
 
-		ret = net_if_ipv4_addr_mask_cmp(iface, dst);
-		if (ret) {
-			LOG_INF("selected iface: %s", iface->if_dev->dev->name);
-			return iface;
-		}
-	}
+	// 	ret = net_if_ipv4_addr_mask_cmp(iface, dst);
+	// 	if (ret) {
+	// 		LOG_INF("selected iface: %s", iface->if_dev->dev->name);
+	// 		return iface;
+	// 	}
+	// }
 
 	return net_if_get_default();
 }
