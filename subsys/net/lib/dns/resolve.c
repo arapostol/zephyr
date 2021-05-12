@@ -211,6 +211,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 	}
 
 	if (ctx->state != DNS_RESOLVE_CONTEXT_INACTIVE) {
+		LOG_ERR("DNS NOT EMPTY");
 		ret = -ENOTEMPTY;
 		goto fail;
 	}
@@ -241,6 +242,12 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 	if (servers_sa) {
 		for (i = 0; idx < SERVER_COUNT && servers_sa[i]; i++) {
+			char hr_addr[NET_IPV4_ADDR_LEN];
+			struct sockaddr_in *dns;
+
+			dns = (struct sockaddr_in *) servers_sa[idx];
+			NET_DBG("[%d] %s", i, net_addr_ntop(dns->sin_family,
+					&dns->sin_addr.s_addr, hr_addr, NET_IPV4_ADDR_LEN));
 			memcpy(&ctx->servers[idx].dns_server, servers_sa[i],
 			       sizeof(ctx->servers[idx].dns_server));
 			dns_postprocess_server(ctx, idx);
@@ -1388,12 +1395,14 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 	int err;
 
 	if (!ctx) {
+		LOG_ERR("DNS RESOLVE NO CTX");
 		return -ENOENT;
 	}
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 
 	if (ctx->state == DNS_RESOLVE_CONTEXT_DEACTIVATING) {
+		LOG_ERR("DNS RESOLVE BUSY");
 		err = -EBUSY;
 		goto unlock;
 	}
@@ -1403,11 +1412,17 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 
 		err = dns_resolve_close_locked(ctx);
 		if (err) {
+			LOG_ERR("DNS ERROR RESOLVE CONTEXT ACTIVE");
 			goto unlock;
 		}
 	}
 
 	err = dns_resolve_init_locked(ctx, servers, servers_sa);
+	if (err) {
+		LOG_ERR("DNS resolver error");
+	} else {
+		LOG_DBG("DNS resolver reconfigured");
+	}
 
 unlock:
 	k_mutex_unlock(&ctx->lock);
