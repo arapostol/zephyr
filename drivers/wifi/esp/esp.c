@@ -277,8 +277,6 @@ static void esp_dns_work(struct k_work *work)
 	if (err) {
 		LOG_ERR("Could not set DNS servers: %d", err);
 	}
-
-	LOG_DBG("DNS resolver reconfigured");
 }
 
 /* +CIPDNS:enable[,"DNS IP1"[,"DNS IP2"[,"DNS IP3"]]] */
