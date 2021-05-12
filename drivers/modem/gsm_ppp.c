@@ -868,7 +868,12 @@ void gsm_ppp_start(const struct device *device)
 int gsm_ppp_resume(const struct device *device)
 {
 	struct gsm_modem *gsm = device->data;
+	struct net_if *iface = gsm->iface;
 	int rc;
+
+	if (net_if_flag_is_set(iface, NET_IF_UP)) {
+		return 0;
+	}
 
 	gsm->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
 	gsm->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
@@ -897,6 +902,10 @@ int gsm_ppp_stop(const struct device *device)
 	struct gsm_modem *gsm = device->data;
 	struct net_if *iface = gsm->iface;
 	int rc;
+
+	if (!net_if_flag_is_set(iface, NET_IF_UP)) {
+		return 0;
+	}
 
 	net_if_l2(iface)->enable(iface, false);
 
