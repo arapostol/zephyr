@@ -371,7 +371,7 @@ static const struct setup_cmd setup_cmds[] = {
 	/* Set PCM driver to TLV320AIC3104 */
 	// SETUP_CMD_NOHANDLE("AT+QDAI=1"),
 	/* Enable DTMF detection */
-	SETUP_CMD_NOHANDLE("AT+QTONEDET=1"),
+	SETUP_CMD_NOHANDLE("AT+QTONEDET=1,1"),
 	/* Configure URC Indication Option */
 	SETUP_CMD_NOHANDLE("AT+QURCCFG=\"urcport\",\"uart1\""),
 
