@@ -388,7 +388,7 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data, *vlan_tag),
 					   total_len, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("Failed to obtain RX buffer");
+		// LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
 
