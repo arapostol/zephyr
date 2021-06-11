@@ -368,10 +368,6 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+QRXGAIN=20000"),
 	/* Max call audio level */
 	SETUP_CMD_NOHANDLE(clvl_cmd),
-	/* Set PCM driver to TLV320AIC3104 */
-	// SETUP_CMD_NOHANDLE("AT+QDAI=1"),
-	/* Enable DTMF detection */
-	SETUP_CMD_NOHANDLE("AT+QTONEDET=1,1"),
 	/* Configure URC Indication Option */
 	SETUP_CMD_NOHANDLE("AT+QURCCFG=\"urcport\",\"uart1\""),
 
