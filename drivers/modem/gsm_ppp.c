@@ -364,8 +364,6 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("ATS7=120"),
 	/* Audio configuration */
 	SETUP_CMD_NOHANDLE("AT+QDAI=5,1,0,1,0,0"),
-	SETUP_CMD_NOHANDLE("AT+QMIC=2500,2500"),
-	SETUP_CMD_NOHANDLE("AT+QRXGAIN=20000"),
 	/* Max call audio level */
 	SETUP_CMD_NOHANDLE(clvl_cmd),
 	/* Configure URC Indication Option */
